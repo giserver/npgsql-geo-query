@@ -6,6 +6,15 @@
 		<TargetFrameworks>net6.0;net7.0</TargetFrameworks>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<PackageIcon>logo.png</PackageIcon>
+		<RepositoryUrl>https://github.com/cocaine-coder/npgsql-geo-query.git</RepositoryUrl>
+		<Authors>CocaineCoder</Authors>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageTags>npgsql;postgis;extensions</PackageTags>
+		<Title>npgsql in mvt/geopbf/geojson query</Title>
+		<Description>use postgis sql to query data as mvt/geopbf/geojson format.
+you can use app.UseGeoQuery() to make webapi or use interface IGeoQuery.
+more information please read README.md.</Description>
+		<PackageId>Npgisql.GeoQuery</PackageId>
 	</PropertyGroup>
 
 
@@ -16,6 +25,10 @@
 
 	<ItemGroup>
 	  <None Include="..\..\logo.png">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
+	  <None Include="..\..\README.md">
 	    <Pack>True</Pack>
 	    <PackagePath>\</PackagePath>
 	  </None>
