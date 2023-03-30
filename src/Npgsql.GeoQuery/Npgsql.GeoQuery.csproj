@@ -15,6 +15,7 @@
 you can use app.UseGeoQuery() to make webapi or use interface IGeoQuery.
 more information please read README.md.</Description>
 		<PackageId>Npgisql.GeoQuery</PackageId>
+		<Version>1.0.1</Version>
 	</PropertyGroup>
 
 

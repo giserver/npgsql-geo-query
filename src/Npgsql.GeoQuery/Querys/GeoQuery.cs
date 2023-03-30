@@ -8,10 +8,12 @@ internal class GeoQuery : IGeoQuery
         table.ThrowIfNullOrWhiteSpace(nameof(table));
         geomColumn.ThrowIfNullOrWhiteSpace(nameof(geomColumn));
 
+        var columnsString = GetPgSqlColumnsString(columns);
+
         var sql = $@"SELECT ST_AsGeobuf(q, 'geom')
                           FROM (SELECT
                                   ST_Transform({geomColumn}, 4326) as geom
-                                  {(columns != null ? $", {columns}" : "")}
+                                  {(columnsString != null ? $",{columnsString}" : "")}
                                 FROM
                                   {table}
                                 {(filter != null ? $"WHERE {filter}" : "")}
@@ -26,7 +28,7 @@ internal class GeoQuery : IGeoQuery
         table.ThrowIfNullOrWhiteSpace(nameof(table));
         geomColumn.ThrowIfNullOrWhiteSpace(nameof(geomColumn));
 
-        var columnString = columns == null ? null : string.Join(',', columns.Select(x => $"\"{x}\""));
+        var columnsString = GetPgSqlColumnsString(columns);
 
         var sql = $@"
             SELECT
@@ -45,7 +47,7 @@ internal class GeoQuery : IGeoQuery
                                 row_to_json(t)
                             FROM (
                                 SELECT
-                                   {columnString ?? ""}
+                                   {columnsString ?? ""}
                                 ) AS t
                             ) AS properties
                     FROM {table}
@@ -61,6 +63,8 @@ internal class GeoQuery : IGeoQuery
         table.ThrowIfNullOrWhiteSpace(nameof(table));
         geomColumn.ThrowIfNullOrWhiteSpace(nameof(geomColumn));
 
+        var columnsString = GetPgSqlColumnsString(columns);
+
         var sql = $@"
             WITH mvt_geom as (
               SELECT
@@ -68,7 +72,7 @@ internal class GeoQuery : IGeoQuery
                   ST_Transform({geomColumn}, 3857),
                   ST_TileEnvelope({z}, {x}, {y})
                 ) as geom
-                {(columns != null ? $",{columns}" : "")}
+                {(columnsString != null ? $",{columnsString}" : "")}
               FROM
                 {table},
                 (SELECT ST_SRID({geomColumn}) AS srid FROM {table} LIMIT 1) a
@@ -81,6 +85,14 @@ internal class GeoQuery : IGeoQuery
             SELECT ST_AsMVT(mvt_geom.*, '{table}', 4096, 'geom') AS mvt from mvt_geom;";
 
         return await QuerySingleValueAsync<byte[]>(connectionString, sql);
+    }
+
+    private static string? GetPgSqlColumnsString(string[]? columns)
+    {
+        if (columns == null || columns.Length == 0)
+            return null;
+
+        return string.Join(',', columns.Select(x => $"\"{x}\""));
     }
 
     private static async Task<T> QuerySingleValueAsync<T>(string connectionString, string sql, Array? parameters = null)
