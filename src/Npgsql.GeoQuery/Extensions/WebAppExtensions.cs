@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Npgsql.GeoQuery.Querys;
+using System.Xml.Linq;
 
 namespace Npgsql.GeoQuery.Extensions;
 
@@ -17,15 +19,17 @@ public static class WebAppExtensions
 
         routeHandlerBuilders[0] = app.MapGet
         (prefix + "/mvt/{database}/{table}/{geomColumn}/{z:int}/{x:int}/{y:int}.pbf", async (
+            [FromServices] IGeoQuery geoQuery,
             string database,
             string table,
             string geomColumn,
             int z,
             int x,
             int y,
+            string? schema,
             string? columns,
             string? filter,
-            [FromServices] IGeoQuery geoQuery
+            bool? centroid
         ) =>
         {
             var bytes = await geoQuery.GetMvtBufferAsync(
@@ -35,39 +39,47 @@ public static class WebAppExtensions
                 z,
                 x,
                 y,
+                schema ?? "public",
                 columns.SpliteByComma(),
-                filter);
+                filter,
+                centroid ?? false);
             return Results.Bytes(bytes, "application/x-protobuf");
         });
 
         routeHandlerBuilders[1] = app.MapGet
         (prefix + "/geobuf/{database}/{table}/{geomColumn}.pbf", async (
+            [FromServices] IGeoQuery geoQuery,
             string database,
             string table,
             string geomColumn,
+            string? schema,
             string? columns,
             string? filter,
-            [FromServices] IGeoQuery geoQuery
+            bool? centroid
         ) =>
         {
             var bytes = await geoQuery.GetGeoBufferAsync(
                 connectionStringTemplate.Format(database),
                 table,
                 geomColumn,
+                schema ?? "public",
                 columns.SpliteByComma(),
-                filter);
+                filter,
+                centroid ?? false);
             return Results.Bytes(bytes, "application/x-protobuf");
         });
 
         routeHandlerBuilders[2] = app.MapGet
         (prefix + "/geojson/{database}/{table}/{geomColumn}", async (
+            [FromServices] IGeoQuery geoQuery,
             string database,
             string table,
             string geomColumn,
+            string? schema,
             string? idColumn,
             string? columns,
             string? filter,
-            [FromServices] IGeoQuery geoQuery
+            bool? centroid
         ) =>
         {
             var geoJson =
@@ -75,9 +87,11 @@ public static class WebAppExtensions
                 connectionStringTemplate.Format(database),
                 table,
                 geomColumn,
+                schema ?? "public",
                 idColumn,
                 columns.SpliteByComma(),
-                filter);
+                filter,
+                centroid ?? false);
             return Results.Text(geoJson, "application/json");
         });
 

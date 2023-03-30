@@ -2,32 +2,47 @@
 
 internal class GeoQuery : IGeoQuery
 {
-    public async Task<byte[]> GetGeoBufferAsync(string connectionString, string table, string geomColumn, string[]? columns, string? filter)
+    public async Task<byte[]> GetGeoBufferAsync(string connectionString, string table, string geomColumn,
+        string schema = "public",
+        string[]? columns = null,
+        string? filter = null,
+        bool centroid = false)
     {
         connectionString.ThrowIfNullOrWhiteSpace(nameof(connectionString));
+        schema.ThrowIfNullOrWhiteSpace(nameof(schema));
         table.ThrowIfNullOrWhiteSpace(nameof(table));
         geomColumn.ThrowIfNullOrWhiteSpace(nameof(geomColumn));
 
+        var tableString = GetPgSqlTableString(schema, table);
+        var geomColumnString = centroid ? $"ST_Centroid(\"${geomColumn}\")" : $"\"${geomColumn}\"";
         var columnsString = GetPgSqlColumnsString(columns);
 
         var sql = $@"SELECT ST_AsGeobuf(q, 'geom')
                           FROM (SELECT
-                                  ST_Transform({geomColumn}, 4326) as geom
+                                  ST_Transform({geomColumnString}, 4326) as geom
                                   {(columnsString != null ? $",{columnsString}" : "")}
                                 FROM
-                                  {table}
+                                  {tableString}
                                 {(filter != null ? $"WHERE {filter}" : "")}
                           ) as q;";
 
         return await QuerySingleValueAsync<byte[]>(connectionString, sql);
     }
 
-    public async Task<string> GetGeoJsonAsync(string connectionString, string table, string geomColumn, string? idColumn, string[]? columns, string? filter)
+    public async Task<string> GetGeoJsonAsync(string connectionString, string table, string geomColumn,
+        string schema = "public",
+        string? idColumn = null,
+        string[]? columns = null,
+        string? filter = null,
+        bool centroid = false)
     {
         connectionString.ThrowIfNullOrWhiteSpace(nameof(connectionString));
+        schema.ThrowIfNullOrWhiteSpace(nameof(schema));
         table.ThrowIfNullOrWhiteSpace(nameof(table));
         geomColumn.ThrowIfNullOrWhiteSpace(nameof(geomColumn));
 
+        var tableString = GetPgSqlTableString(schema, table);
+        var geomColumnString = centroid ? $"ST_Centroid(\"${geomColumn}\")" : $"\"${geomColumn}\"";
         var columnsString = GetPgSqlColumnsString(columns);
 
         var sql = $@"
@@ -41,7 +56,7 @@ internal class GeoQuery : IGeoQuery
                     SELECT
                         'Feature' AS type
                         {(idColumn != null ? $",{idColumn} as id" : "")}
-                        , ST_AsGeoJSON({geomColumn})::json as geometry  --geom表中的空间字段
+                        , ST_AsGeoJSON({geomColumnString})::json as geometry
                         , (
                             SELECT
                                 row_to_json(t)
@@ -50,41 +65,53 @@ internal class GeoQuery : IGeoQuery
                                    {columnsString ?? ""}
                                 ) AS t
                             ) AS properties
-                    FROM {table}
+                    FROM {tableString}
                     {(filter != null ? $"WHERE {filter}" : "")} ) AS f
                ) AS fc";
 
         return await QuerySingleValueAsync<string>(connectionString, sql);
     }
 
-    public async Task<byte[]> GetMvtBufferAsync(string connectionString, string table, string geomColumn, int z, int x, int y, string[]? columns, string? filter)
+    public async Task<byte[]> GetMvtBufferAsync(string connectionString, string table, string geomColumn, int z, int x, int y,
+        string schema = "public",
+        string[]? columns = null,
+        string? filter = null,
+        bool centroid = false)
     {
         connectionString.ThrowIfNullOrWhiteSpace(nameof(connectionString));
+        schema.ThrowIfNullOrWhiteSpace(nameof(schema));
         table.ThrowIfNullOrWhiteSpace(nameof(table));
         geomColumn.ThrowIfNullOrWhiteSpace(nameof(geomColumn));
 
+        var tableString = GetPgSqlTableString(schema, table);
+        var geomColumnString = centroid ? $"ST_Centroid(\"${geomColumn}\")" : $"\"${geomColumn}\"";
         var columnsString = GetPgSqlColumnsString(columns);
 
         var sql = $@"
             WITH mvt_geom as (
               SELECT
                 ST_AsMVTGeom (
-                  ST_Transform({geomColumn}, 3857),
+                  ST_Transform({geomColumnString}, 3857),
                   ST_TileEnvelope({z}, {x}, {y})
                 ) as geom
                 {(columnsString != null ? $",{columnsString}" : "")}
               FROM
-                {table},
-                (SELECT ST_SRID({geomColumn}) AS srid FROM {table} LIMIT 1) a
+                {tableString},
+                (SELECT ST_SRID(""{geomColumn}"") AS srid FROM {tableString} LIMIT 1) a
               WHERE
                 ST_Intersects(
-                  {geomColumn},
+                  ""{geomColumn}"",
                   ST_Transform(ST_TileEnvelope({z}, {x}, {y}),srid)
                 ) {(filter != null ? $" AND {filter}" : "")}
             )
             SELECT ST_AsMVT(mvt_geom.*, '{table}', 4096, 'geom') AS mvt from mvt_geom;";
 
         return await QuerySingleValueAsync<byte[]>(connectionString, sql);
+    }
+
+    private static string GetPgSqlTableString(string schema, string table)
+    {
+        return $"\"{schema}\".\"${table}\"";
     }
 
     private static string? GetPgSqlColumnsString(string[]? columns)

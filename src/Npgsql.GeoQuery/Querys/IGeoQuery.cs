@@ -12,11 +12,16 @@ public interface IGeoQuery
     /// <param name="z">{z}</param>
     /// <param name="x">{x}</param>
     /// <param name="y">{y}</param>
+    /// <param name="schema">default: public</param>
     /// <param name="columns">eg: id,name</param>
     /// <param name="filter">eg: name like 'scc%'</param>
+    /// <param name="centroid">default false</param>
     /// <returns></returns>
     Task<byte[]> GetMvtBufferAsync(string connectionString, string table, string geomColumn, int z, int x, int y,
-        string[]? columns, string? filter);
+        string schema = "public",
+        string[]? columns = null,
+        string? filter = null,
+        bool centroid = false);
 
     /// <summary>
     /// get GeoBuf
@@ -25,11 +30,16 @@ public interface IGeoQuery
     /// <param name="connectionString"></param>
     /// <param name="table">name of table</param>
     /// <param name="geomColumn">name of geometry column</param>
+    /// <param name="schema">default: public</param>
     /// <param name="columns">eg: id,name</param>
     /// <param name="filter">eg: name like 'scc%'</param>
+    /// <param name="centroid">default false</param>
     /// <returns></returns>
     Task<byte[]> GetGeoBufferAsync(string connectionString, string table, string geomColumn,
-        string[]? columns, string? filter);
+        string schema = "public",
+        string[]? columns = null,
+        string? filter = null,
+        bool centroid = false);
 
     /// <summary>
     /// get GeoJson
@@ -38,10 +48,16 @@ public interface IGeoQuery
     /// <param name="connectionString"></param>
     /// <param name="table">name of table</param>
     /// <param name="geomColumn">name of geometry column</param>
+    /// <param name="schema">default: public</param>
     /// <param name="idColumn">name of id column</param>
     /// <param name="columns">eg: id,name</param>
     /// <param name="filter">eg: name like 'scc%'</param>
+    /// <param name="centroid">default false</param>
     /// <returns></returns>
-    Task<string> GetGeoJsonAsync(string connectionString, string table, string geomColumn, string? idColumn,
-        string[]? columns, string? filter);
+    Task<string> GetGeoJsonAsync(string connectionString, string table, string geomColumn,
+        string schema = "public",
+        string? idColumn = null,
+        string[]? columns = null,
+        string? filter = null,
+        bool centroid = false);
 }
