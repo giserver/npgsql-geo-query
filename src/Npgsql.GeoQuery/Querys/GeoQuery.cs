@@ -16,15 +16,13 @@ internal class GeoQuery : IGeoQuery
         var tableString = GetPgSqlTableString(schema, table);
         var geomColumnString = GetPgSqlGeomColumnString(geomColumn, centroid);
         var columnsString = GetPgSqlColumnsString(columns);
+        columnsString = columnsString != null ? $",{columnsString}" : "";
+        var whereString = filter != null ? $"WHERE {filter}" : "";
 
-        var sql = $@"SELECT ST_AsGeobuf(q, 'geom')
-                          FROM (SELECT
-                                  ST_Transform({geomColumnString}, 4326) as geom
-                                  {(columnsString != null ? $",{columnsString}" : "")}
-                                FROM
-                                  {tableString}
-                                {(filter != null ? $"WHERE {filter}" : "")}
-                          ) as q;";
+        var sql = $"""
+            SELECT ST_AsGeobuf(q, 'geom')
+            FROM (SELECT ST_Transform({geomColumnString}, 4326) AS geom {columnsString} FROM {tableString} {whereString}) as q;
+            """;
 
         return await QuerySingleValueAsync<byte[]>(connectionString, sql);
     }
@@ -43,31 +41,18 @@ internal class GeoQuery : IGeoQuery
 
         var tableString = GetPgSqlTableString(schema, table);
         var geomColumnString = GetPgSqlGeomColumnString(geomColumn, centroid);
-        var columnsString = GetPgSqlColumnsString(columns);
+        var idColumnString = idColumn != null ? $",{idColumn} as id" : "";
+        var columnsString = GetPgSqlColumnsString(columns) ?? "";
+        var filterString = filter != null ? $"WHERE {filter}" : "";
 
-        var sql = $@"
-            SELECT
-                row_to_json(fc)
-            FROM (
-                SELECT
-                    'FeatureCollection' AS type
-                    ,COALESCE (array_to_json(array_agg(f)),'[]'::json) AS features
-                FROM (
-                    SELECT
-                        'Feature' AS type
-                        {(idColumn != null ? $",{idColumn} as id" : "")}
-                        , ST_AsGeoJSON({geomColumnString})::json as geometry
-                        , (
-                            SELECT
-                                row_to_json(t)
-                            FROM (
-                                SELECT
-                                   {columnsString ?? ""}
-                                ) AS t
-                            ) AS properties
-                    FROM {tableString}
-                    {(filter != null ? $"WHERE {filter}" : "")} ) AS f
-               ) AS fc";
+        var sql = $"""
+            SELECT row_to_json(fc)
+            FROM (SELECT 'FeatureCollection' AS type,COALESCE (array_to_json(array_agg(f)),'[]'::json) AS features
+                  FROM (SELECT 'Feature' AS type {idColumnString}, ST_AsGeoJSON({geomColumnString})::json AS geometry,
+                               (SELECT row_to_json(t) FROM (SELECT {columnsString}) AS t) AS properties
+                        FROM {tableString} {filterString} ) AS f
+                       ) AS fc
+            """;
 
         return await QuerySingleValueAsync<string>(connectionString, sql);
     }
@@ -86,25 +71,16 @@ internal class GeoQuery : IGeoQuery
         var tableString = GetPgSqlTableString(schema, table);
         var geomColumnString = GetPgSqlGeomColumnString(geomColumn, centroid);
         var columnsString = GetPgSqlColumnsString(columns);
+        columnsString = columnsString != null ? $",{columnsString}" : "";
+        var filterString = filter != null ? $" AND {filter}" : "";
 
-        var sql = $@"
+        var sql = $"""
             WITH mvt_geom as (
-              SELECT
-                ST_AsMVTGeom (
-                  ST_Transform({geomColumnString}, 3857),
-                  ST_TileEnvelope({z}, {x}, {y})
-                ) as geom
-                {(columnsString != null ? $",{columnsString}" : "")}
-              FROM
-                {tableString},
-                (SELECT ST_SRID(""{geomColumn}"") AS srid FROM {tableString} LIMIT 1) a
-              WHERE
-                ST_Intersects(
-                  ""{geomColumn}"",
-                  ST_Transform(ST_TileEnvelope({z}, {x}, {y}),srid)
-                ) {(filter != null ? $" AND {filter}" : "")}
-            )
-            SELECT ST_AsMVT(mvt_geom.*, '{table}', 4096, 'geom') AS mvt from mvt_geom;";
+                 SELECT ST_AsMVTGeom (ST_Transform({geomColumnString}, 3857),ST_TileEnvelope({z}, {x}, {y})) as geom {columnsString}
+                 FROM {tableString},(SELECT ST_SRID("{geomColumn}") AS srid FROM {tableString} LIMIT 1) a
+                 WHERE ST_Intersects("{geomColumn}",ST_Transform(ST_TileEnvelope({z}, {x}, {y}),srid)) {filterString})
+            SELECT ST_AsMVT(mvt_geom.*, '{table}', 4096, 'geom') AS mvt from mvt_geom;
+            """;
 
         return await QuerySingleValueAsync<byte[]>(connectionString, sql);
     }
