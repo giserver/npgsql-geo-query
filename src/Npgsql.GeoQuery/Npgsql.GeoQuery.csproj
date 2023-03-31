@@ -4,6 +4,7 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<TargetFrameworks>net6.0;net7.0</TargetFrameworks>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<PackageIcon>logo.png</PackageIcon>
 		<RepositoryUrl>https://github.com/cocaine-coder/npgsql-geo-query.git</RepositoryUrl>
@@ -15,7 +16,7 @@
 you can use app.UseGeoQuery() to make webapi or use interface IGeoQuery.
 more information please read README.md.</Description>
 		<PackageId>Npgisql.GeoQuery</PackageId>
-		<Version>1.0.1</Version>
+		<Version>1.0.2</Version>
 	</PropertyGroup>
 
 

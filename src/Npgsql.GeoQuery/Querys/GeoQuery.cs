@@ -14,7 +14,7 @@ internal class GeoQuery : IGeoQuery
         geomColumn.ThrowIfNullOrWhiteSpace(nameof(geomColumn));
 
         var tableString = GetPgSqlTableString(schema, table);
-        var geomColumnString = centroid ? $"ST_Centroid(\"${geomColumn}\")" : $"\"${geomColumn}\"";
+        var geomColumnString = GetPgSqlGeomColumnString(geomColumn, centroid);
         var columnsString = GetPgSqlColumnsString(columns);
 
         var sql = $@"SELECT ST_AsGeobuf(q, 'geom')
@@ -42,7 +42,7 @@ internal class GeoQuery : IGeoQuery
         geomColumn.ThrowIfNullOrWhiteSpace(nameof(geomColumn));
 
         var tableString = GetPgSqlTableString(schema, table);
-        var geomColumnString = centroid ? $"ST_Centroid(\"${geomColumn}\")" : $"\"${geomColumn}\"";
+        var geomColumnString = GetPgSqlGeomColumnString(geomColumn, centroid);
         var columnsString = GetPgSqlColumnsString(columns);
 
         var sql = $@"
@@ -84,7 +84,7 @@ internal class GeoQuery : IGeoQuery
         geomColumn.ThrowIfNullOrWhiteSpace(nameof(geomColumn));
 
         var tableString = GetPgSqlTableString(schema, table);
-        var geomColumnString = centroid ? $"ST_Centroid(\"${geomColumn}\")" : $"\"${geomColumn}\"";
+        var geomColumnString = GetPgSqlGeomColumnString(geomColumn, centroid);
         var columnsString = GetPgSqlColumnsString(columns);
 
         var sql = $@"
@@ -111,7 +111,12 @@ internal class GeoQuery : IGeoQuery
 
     private static string GetPgSqlTableString(string schema, string table)
     {
-        return $"\"{schema}\".\"${table}\"";
+        return $"\"{schema}\".\"{table}\"";
+    }
+
+    private static string GetPgSqlGeomColumnString(string geomColumn, bool centroid)
+    {
+        return centroid ? $"ST_Centroid(\"{geomColumn}\")" : $"\"{geomColumn}\"";
     }
 
     private static string? GetPgSqlColumnsString(string[]? columns)
