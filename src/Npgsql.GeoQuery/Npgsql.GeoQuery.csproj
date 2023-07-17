@@ -11,7 +11,7 @@
 		<RepositoryUrl>https://github.com/cocaine-coder/npgsql-geo-query.git</RepositoryUrl>
 		<Authors>CocaineCoder</Authors>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<PackageTags>npgsql;postgis;extensions</PackageTags>
+		<PackageTags>npgsql;postgis;extensions;mvt;mapbox vector tile;geojson;geobuf</PackageTags>
 		<Title>npgsql in mvt/geopbf/geojson query</Title>
 		<Description>use postgis sql to query data as mvt/geopbf/geojson format.
 you can use app.UseGeoQuery() to make webapi or use interface IGeoQuery.

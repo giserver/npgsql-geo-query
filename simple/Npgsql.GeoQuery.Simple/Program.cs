@@ -15,7 +15,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseGeoQuery(app.Configuration.GetConnectionString("Template"));
+app.UseGeoQuery(app.Configuration.GetConnectionString("Template"), options =>
+{
+    //options.IsConnectionStringTemplate = false;
+});
 
 app.Run();
 
