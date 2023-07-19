@@ -46,7 +46,7 @@ public class GeobufRouteHandlerOption : GeoQueryRouteHandlerOption
                 return Results.Bytes(bytes, "application/x-protobuf");
             }
         :
-            async ([FromServices] IGeoQuery geoQuery, string database, string table, string geomColumn, string? schema, string? columns, string? filter, bool? centroid) =>
+            async ([FromServices] IGeoQuery geoQuery, string table, string geomColumn, string? schema, string? columns, string? filter, bool? centroid) =>
             {
                 var bytes = await geoQuery.GetGeoBufferAsync(connectionString, table, geomColumn, schema ?? "public", columns.SpliteByComma(), filter, centroid ?? false);
                 return Results.Bytes(bytes, "application/x-protobuf");
@@ -70,7 +70,7 @@ public class GeoJsonRouteHandlerOption : GeoQueryRouteHandlerOption
                 return Results.Text(geoJson, "application/json");
             }
         :
-            async ([FromServices] IGeoQuery geoQuery, string database, string table, string geomColumn, string? schema, string? idColumn, string? columns, string? filter, bool? centroid) =>
+            async ([FromServices] IGeoQuery geoQuery, string table, string geomColumn, string? schema, string? idColumn, string? columns, string? filter, bool? centroid) =>
             {
                 var geoJson = await geoQuery.GetGeoJsonAsync(connectionString, table, geomColumn, schema ?? "public", idColumn, columns.SpliteByComma(), filter, centroid ?? false);
                 return Results.Text(geoJson, "application/json");
