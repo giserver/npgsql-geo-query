@@ -1,4 +1,4 @@
-# npgsql-geo-query
+# npgsql-geo-query `Migrate to` [giserver](https://github.com/giserver/giserver)
 
 [![Nuget](https://img.shields.io/nuget/v/Npgisql.GeoQuery)](https://www.nuget.org/packages/Npgisql.GeoQuery)
 ![Nuget](https://img.shields.io/nuget/dt/Npgisql.GeoQuery)
